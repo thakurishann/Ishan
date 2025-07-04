@@ -1,0 +1,297 @@
+import random
+from datetime import datetime
+
+class Product:
+    def __init__(self, id, name, category, price, stock, rating=4.0):
+        self.id = id
+        self.name = name
+        self.category = category
+        self.price = price
+        self.stock = stock
+        self.rating = rating
+    
+    def __str__(self):
+        return f"{self.id}: {self.name} (${self.price}) - {self.stock} in stock"
+
+class ProductManager:
+    def __init__(self):
+        self.products = []
+        self._initialize_products()
+    
+    def _initialize_products(self):
+        # 20 Products across 4 Categories
+        # Electronics (5 products)
+        self.products.append(Product(1, "Bluetooth Headphones", "Electronics", 89.99, 50, 4.5))
+        self.products.append(Product(2, "Smartphone X", "Electronics", 799.99, 30, 4.7))
+        self.products.append(Product(3, "Wireless Mouse", "Electronics", 29.99, 100, 4.3))
+        self.products.append(Product(4, "4K Monitor", "Electronics", 299.99, 25, 4.6))
+        self.products.append(Product(5, "Fitness Tracker", "Electronics", 59.99, 60, 4.4))
+        
+        # Clothing (5 products)
+        self.products.append(Product(6, "Cotton T-Shirt", "Clothing", 19.99, 200, 4.2))
+        self.products.append(Product(7, "Denim Jeans", "Clothing", 49.99, 150, 4.1))
+        self.products.append(Product(8, "Running Shoes", "Clothing", 79.99, 80, 4.6))
+        self.products.append(Product(9, "Winter Jacket", "Clothing", 99.99, 40, 4.3))
+        self.products.append(Product(10, "Baseball Cap", "Clothing", 14.99, 120, 4.0))
+        
+        # Home & Kitchen (5 products)
+        self.products.append(Product(11, "Coffee Maker", "Home & Kitchen", 49.99, 50, 4.5))
+        self.products.append(Product(12, "Air Fryer", "Home & Kitchen", 89.99, 35, 4.7))
+        self.products.append(Product(13, "Blender", "Home & Kitchen", 39.99, 70, 4.3))
+        self.products.append(Product(14, "Dinner Set", "Home & Kitchen", 79.99, 30, 4.4))
+        self.products.append(Product(15, "Cookware Set", "Home & Kitchen", 129.99, 25, 4.6))
+        
+        # Books (5 products)
+        self.products.append(Product(16, "Python Programming", "Books", 39.99, 100, 4.8))
+        self.products.append(Product(17, "Sci-Fi Novel", "Books", 12.99, 150, 4.3))
+        self.products.append(Product(18, "Cookbook", "Books", 24.99, 80, 4.5))
+        self.products.append(Product(19, "History Book", "Books", 19.99, 60, 4.2))
+        self.products.append(Product(20, "Children's Book", "Books", 9.99, 200, 4.7))
+    
+    def get_product(self, product_id):
+        for product in self.products:
+            if product.id == product_id:
+                return product
+        return None
+    
+    def list_products(self, category=None):
+        print("\nAVAILABLE PRODUCTS")
+        print("ID | Name | Price | Stock | Category")
+        print("------------------------------------")
+        for product in sorted(self.products, key=lambda x: x.category):
+            if not category or product.category == category:
+                print(f"{product.id:2} | {product.name:20} | ${product.price:6.2f} | {product.stock:4} | {product.category}")
+        print()
+
+class ShoppingCart:
+    def __init__(self, product_manager):
+        self.items = {}
+        self.product_manager = product_manager
+    
+    def add_item(self, product_id, quantity=1):
+        try:
+            quantity = int(quantity)
+            if quantity <= 0:
+                raise ValueError("Quantity must be positive")
+            
+            product = self.product_manager.get_product(product_id)
+            if not product:
+                print(f"Error: Product ID {product_id} not found")
+                return False
+            
+            available = product.stock
+            current = self.items.get(product_id, 0)
+            
+            if available >= current + quantity:
+                self.items[product_id] = current + quantity
+                print(f"Added {quantity} {product.name}(s) to your cart")
+                return True
+            else:
+                print(f"Error: Only {available} available (you have {current} in cart)")
+                return False
+                
+        except ValueError:
+            print("Error: Invalid quantity")
+            return False
+    
+    def remove_item(self, product_id, quantity=None):
+        if product_id not in self.items:
+            print("Product not in cart")
+            return False
+            
+        current = self.items[product_id]
+        product = self.product_manager.get_product(product_id)
+        
+        if quantity is None or quantity >= current:
+            del self.items[product_id]
+            print(f"Removed all {product.name} from cart")
+            return True
+        
+        try:
+            quantity = int(quantity)
+            if quantity <= 0:
+                raise ValueError("Quantity must be positive")
+                
+            self.items[product_id] = current - quantity
+            print(f"Removed {quantity} {product.name}(s) from cart")
+            return True
+            
+        except ValueError:
+            print("Error: Invalid quantity")
+            return False
+    
+    def calculate_total(self):
+        total = 0.0
+        for product_id, quantity in self.items.items():
+            product = self.product_manager.get_product(product_id)
+            total += product.price * quantity
+        return round(total, 2)
+    
+    def view_cart(self):
+        if not self.items:
+            print("\nYour cart is empty!")
+            return
+        
+        print("\nYOUR SHOPPING CART")
+        print("------------------------------------")
+        print("ID | Name | Qty | Price | Subtotal")
+        print("------------------------------------")
+        
+        grand_total = 0
+        for product_id, quantity in self.items.items():
+            product = self.product_manager.get_product(product_id)
+            if product:
+                subtotal = product.price * quantity
+                grand_total += subtotal
+                print(f"{product.id:2} | {product.name:15} | {quantity:3} | ${product.price:6.2f} | ${subtotal:6.2f}")
+        
+        print("------------------------------------")
+        print(f"GRAND TOTAL: ${grand_total:.2f}")
+        print()
+
+class Order:
+    def __init__(self, cart, customer_info=None):
+        self.order_id = str(datetime.now().timestamp()).split('.')[0][-8:]
+        self.items = cart.items.copy()
+        self.customer_info = customer_info or {
+            'name': 'Guest',
+            'email': 'no-email@example.com',
+            'address': 'Not specified'
+        }
+        self.order_date = datetime.now()
+        self.status = "Processing"
+        self.total = cart.calculate_total()
+    
+    def update_status(self, new_status):
+        self.status = new_status
+        print(f"Order status updated to: {new_status}")
+        return True
+    
+    def print_receipt(self, product_manager):
+        print("\n" + "="*50)
+        print(" " * 18 + "ORDER RECEIPT")
+        print("="*50)
+        print(f"ORDER #: {self.order_id}")
+        print(f"DATE: {self.order_date.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"STATUS: {self.status}")
+        print("\nITEMS:")
+        print("----------------------------------------------")
+        print("ID | Name | Qty | Price | Subtotal")
+        print("----------------------------------------------")
+        
+        for product_id, quantity in self.items.items():
+            product = product_manager.get_product(product_id)
+            if product:
+                subtotal = product.price * quantity
+                print(f"{product.id:2} | {product.name:15} | {quantity:3} | ${product.price:6.2f} | ${subtotal:6.2f}")
+        
+        print("\n" + "-"*50)
+        print(f"TOTAL: ${self.total:.2f}")
+        print("\nCUSTOMER DETAILS:")
+        print(f"Name: {self.customer_info['name']}")
+        print(f"Email: {self.customer_info['email']}")
+        print(f"Address: {self.customer_info['address']}")
+        print("\n" + "="*50)
+        print("Thank you for your purchase!")
+        print("="*50)
+
+def get_user_input(prompt, input_type=str):
+    while True:
+        try:
+            if input_type == bool:
+                val = input(prompt).lower()
+                if val in ['y', 'yes', '1']:
+                    return True
+                elif val in ['n', 'no', '0']:
+                    return False
+                else:
+                    raise ValueError
+            return input_type(input(prompt))
+        except ValueError:
+            print("Invalid input, please try again")
+
+def main():
+    pm = ProductManager()
+    cart = ShoppingCart(pm)
+    
+    print("\n" + "="*50)
+    print(" " * 16 + " E-COMMERCE STORE")
+    print("="*50)
+    
+    while True:
+        print("\nMAIN MENU")
+        print("1. Browse Products")
+        print("2. Add Item to Cart")
+        print("3. Remove Item from Cart")
+        print("4. View Cart")
+        print("5. Checkout")
+        print("6. Exit")
+        
+        choice = get_user_input("Enter your choice (1-6): ", int)
+        
+        if choice == 1:
+            pm.list_products()
+            input("Press Enter to continue...")
+        elif choice == 2:
+            pm.list_products()
+            pid = get_user_input("Enter product ID to add: ", int)
+            qty = get_user_input("Enter quantity: ", int)
+            cart.add_item(pid, qty)
+            input("Press Enter to continue...")
+        elif choice == 3:
+            if not cart.items:
+                print("Your cart is empty!")
+                input("Press Enter to continue...")
+                continue
+            
+            cart.view_cart()
+            pid = get_user_input("Enter product ID to remove: ", int)
+            
+            if pid in cart.items:
+                current_qty = cart.items[pid]
+                remove_all = get_user_input(f"Remove all {current_qty}? (y/n): ", bool)
+                if remove_all:
+                    cart.remove_item(pid)
+                else:
+                    qty = get_user_input(f"Enter quantity to remove (1-{current_qty}): ", int)
+                    cart.remove_item(pid, qty)
+            else:
+                print("Product not in cart")
+            
+            input("Press Enter to continue...")
+        elif choice == 4:
+            cart.view_cart()
+            input("Press Enter to continue...")
+        elif choice == 5:
+            if not cart.items:
+                print("Your cart is empty!")
+                input("Press Enter to continue...")
+                continue
+            
+            cart.view_cart()
+            proceed = get_user_input("Proceed to checkout? (y/n): ", bool)
+            
+            if proceed:
+                print("\nENTER CUSTOMER DETAILS")
+                name = get_user_input("Full Name: ", str)
+                email = get_user_input("Email: ", str)
+                address = get_user_input("Shipping Address: ", str)
+                
+                order = Order(cart, {
+                    'name': name,
+                    'email': email,
+                    'address': address
+                })
+                order.update_status("Completed")
+                order.print_receipt(pm)
+                cart.items.clear()
+                input("\nPress Enter to continue...")
+        elif choice == 6:
+            print("\nThank you for shopping with us!")
+            break
+        else:
+            print("Invalid choice, please try again")
+            input("Press Enter to continue...")
+
+if __name__ == "__main__":
+    main()

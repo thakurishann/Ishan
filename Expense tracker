@@ -1,0 +1,35 @@
+expenses = []
+
+while True:
+    print("\nExpense Tracker")
+    print("1. Add Expense")
+    print("2. View Expenses")
+    print("3. Total Expenses")
+    print("4. Exit")
+    
+    choice = input("Choose an option: ")
+    
+    if choice == '1':
+        amount = float(input("Enter the amount: "))
+        description = input("Enter the description: ")
+        expenses.append({'amount': amount, 'description': description})
+        print("Expense added.")
+        
+    elif choice == '2':
+        if not expenses:
+            print("No expenses recorded.")
+        else:
+            print("Expenses:")
+            for expense in expenses:
+                print(f"Description: {expense['description']}, Amount: ${expense['amount']:.2f}")
+                
+    elif choice == '3':
+        total = sum(expense['amount'] for expense in expenses)
+        print(f"Total Expenses: ${total:.2f}")
+        
+    elif choice == '4':
+        print("Exiting the program.")
+        break
+        
+    else:
+        print("Invalid choice. Please try again.")
